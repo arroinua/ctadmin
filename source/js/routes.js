@@ -1,5 +1,6 @@
 const router = require('./router');
 const debug = require('./debug');
+const trunks = require('./trunks/');
 
 router
 .on('/dashboard', 'dashboard', function(params) {
@@ -8,7 +9,8 @@ router
 })
 .on('/trunk/:oid', 'trunk', function(params) {
 	debug.log('trunk route: ', params);
-	document.getElementById('container').innerHTML = params.template({ page: 'Trunk', oid: params.params.oid });
+	trunks.init(params);
+	// document.getElementById('container').innerHTML = params.template({ page: 'Trunk', oid: params.params.oid });
 })
 .on('/trunk/:type/:kind/:oid', 'trunk', function(params) {
 	debug.log('trunk route: ', params);

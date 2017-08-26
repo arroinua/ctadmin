@@ -1,0 +1,1385 @@
+/*
+ * Äàííûé äîêóìåíò ïðåäñòàâëÿåò ñîáîé îïèñàíèå API àäìèíèñòðèðîâàíèÿ ñåðâåðà Smile CTI Server.
+ *
+ * Ïðîãðàììíûé èíòåðôåéñ ñåðâåðà ñîñòîèò è íàáîðà  ïðîöåäóð óäàëåííîãî âûçîâà, êîòîðûå âûïîëíÿþòñÿ â ðåæèìå çàïðîñ-îòâåò.
+ * Çàïðîñû, îòâåòû è íîòèôèêàöèè ïðåäñòàâëÿþò ñîáîé òåêñòîâûå ñîîáùåíèÿ â ôîðìàòå JSON. 
+ * 
+ * Â êà÷åñòâå òðàíñïîðòà äëÿ ïåðåäà÷è ñîîáùåíèé ìîæíî èñïîëüçîâàòü ïðîòîêîëû WebSocket , HTTP/HTTPS.
+ * Ñåðâåð îáñëóæèâàåò HTTP çàïðîñû è ïîäêëþ÷åíèÿ ïî WebSocket.
+ *
+ * Îáìåí ñîîáùåíèÿìè âûïîëíÿåòñÿ â ñîîòâåòñòâèè ñî ñïåöèôèêàöèåé  JSON-RPC (http://www.jsonrpc.org/specification).
+ *
+ * Ñèíòàêñèñ çàïðîñîâ âêëþ÷àåò â ñåáÿ ïîëÿ “id”, “method” è “params”.
+ * Îòâåò ñåðâåðà ñîäåðæèò ïîëÿ “id”, “result” èëè, â ñëó÷àå îøèáêè “id”, “error”.
+ *
+ * Íàïðèìåð:
+ * Çàïðîñ: {“method”: “getUserInfo”, “params”: {  “userid”: “1002” }, “id”: 1}
+ * Îòâåò:  { “result”: {“firstname”: “John”, “lastname”: “Doe”, “department”: “Marketing”, “position”: “manager”, “mobile”: “34456”}, “id”: 1}
+ *
+ *
+ * Ñèíòàêñèñ îïèñàíèÿ ñîîáùåíèé
+ *
+ * Äëÿ îïèñàíèÿ ñîîáùåíèé èñïîëüçóåòñÿ ñëåäóþùèé ôîðìàò:
+ * {
+ *	“method”:		“name of the method”
+ *	“params”: {
+ *		“param1”:	“type of the parameter”,
+ *		“param2”:	“type of the parameter”,
+ *		…
+ *      },
+ *      “result”: {
+ *		“param1”:	“type of the parameter”,
+ *		“param2”:	“type of the parameter”,
+ *		…
+ *      }
+ * }
+ *
+ * Òèïû ïàðàìåòðîâ: “string”, “number”, “boolean” (òàêæå âîçìîæíî “integer” è “float”).
+ * Ïàðàìåòð-ìàññèâ îáîçíà÷àåòñÿ êâàäðàòíûìè ñêîáêàìè [ ], ïàðàìåòð-òàáëèöà – ôèãóðíûìè ñêîáêàìè { }.
+ *
+ *
+ * Ìåòîäû API
+*/
+
+{
+    
+/*  Get list of trunks
+ *  
+ *  method: "getTrunks"
+ * 
+ * 
+ *  params: { map }
+ *  
+ *          "groupid":  trunk group identifier. Must be omitted to retrieve the list of standalone trunks
+ *          
+ *  result: [ array of { maps } ]
+ *  
+ *          "oid":      object identifier
+ *          "name"      trunk name
+ *          "enabled"   trunk state:
+ *                      true - enabled
+ *                      false - disabled
+ *          "status":   description of the last state
+ *          
+ *          
+ * Example:
+ * 
+ * -> { "method": "getTrunks", "params": { } }
+ * <- { "result": [ {"oid":"2364574722245","name":"Intertelecom","enabled":true},{"oid":"1462547254547","name":"MTC","enabled":false,"status":"Registration lost"} ] }
+ * 
+ */
+"getTrunks": {
+    
+    "params": {
+        "groupid":          "string",
+    },
+    
+    "result": [
+        {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "cause":            "string",
+        }
+    ]
+},
+
+
+/*  Get trunk settings
+ *  
+ *  method: "getTrunk"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: { map }
+ *          "name"          trunk name
+ *          "enabled"       trunk state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "status":       description of the last state
+ *          "deviceid":     device identifier
+ *          "protocol":     protocol: sip / sips / h323
+ *          
+ *          "type":         trunk type:
+ *                          "external" - trunk to any service provider
+ *                          "internal" - trunk provided by the server itself
+ *                          
+ *          External trunk params:
+ *          "domain":       IP address or domain name given by service provider
+ *          "register":     registration requirement:
+ *                          true - with registration
+ *                          false - without registration
+ *          External trunk registration params:
+ *          "user":         username (may be phone number)
+ *          "auth":         authentication name
+ *          "pass":         authentication password
+ *          "proxy":        proxy requirement:
+ *                          true - with proxy
+ *                          false - without proxy
+ *          External trunk proxy params:
+ *          "paddr":        IP address or domain name
+ *          "pauth":        authentication name
+ *          "ppass":        authentication password
+ *          
+ *          Internal trunk params:
+ *          "user":         username
+ *          "pass":         password
+ *          
+ *          
+ *          "parameters":   { map }
+ *                          
+ *                          "codecs":   [ array of { maps } ]
+ *                                      "codec":    audio codec name: "G.711 Alaw", "G.711 Ulaw", "G.729", "G.723", "Opus"
+ *                                      "frame":    frame duration in milliseconds
+ *                          
+ *                          "directrtp"     direct media connection mode (true/false)       
+ *                          "transcoding":  allow media transcoding (true/false)
+ *                          "buffering":    allow media buffering (true/false)
+ *                          "earlymedia":   allow early media connection (true/false)
+ *                          "t38fax":       allow t38 fax protocol (true/false)
+ *                          "video":        allow video connection (true/false)
+ *                          "dtmfrelay":    allow dtmf relay (true/false)
+ *                          "dtmfmode":     dtmf mode selection:
+ *                                          "inband"
+ *                                          "rfc2833"
+ *                                          "sip info" (sip/sips protocols)
+ *                                          "h245alpha" (h323 protocol)
+ *                                          "h245signal" (h323 protocol)
+ *                                          
+ *                          "t1":           t1 timer value
+ *                          "t2":           t2 timer value
+ *                          "t3":           t3 timer value
+ *                          "regexpires":   external trunk registration expires value
+ *                          "noprogress":   send Ringback instead of Progress message (true/false)
+ *                          "nosymnat":     disable symmetic RTP transmittion (true/false)
+ *                          "noredirectinfo": omit redirection information (true/false)
+ *                          "passanumber":  pass calling party number to external trunk instead of registered username (true/false)
+ *                          
+ *          "maxinbounds":  inbound connections limit
+ *          "maxoutbounds": outbound connections limit
+ *                          
+ *          "inboundanumbertransforms": [ array of { maps } ]
+ *                                      inbound calling party number rules
+ *                                                      
+ *          "inboundbnumbertransforms": [ array of { maps } ]
+ *                                      inbound called party number rules
+ *                                                      
+ *          "outboundanumbertransforms":[ array of { maps } ]
+ *                                      outbound calling party number rules
+ *                                                      
+ *          "outboundbnumbertransforms":[ array of { maps } ]
+ *                                      outbound called party number rules
+ *                          
+ *                             
+ */
+"getTrunk":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result": {
+        "name":             "string",
+        "enabled":          "boolean",
+        "status":           "string",
+        "deviceid":         "string",
+        "protocol":         "string",
+        "type":             "string",
+        "domain":           "string",
+        "register":         "boolean",
+        "user":             "string",
+        "auth":             "string",
+        "pass":             "string",
+        "proxy":            "boolean",
+        "paddr":            "string",
+        "pauth":            "string",
+        "ppass":            "string",
+        "parameters": {
+            "codecs": [
+                {
+                "codec":    "string",
+                "frame":    "integer",
+                }
+            ],
+            "directrtp":    "boolean",
+            "transcoding":  "boolean",
+            "buffering":    "boolean",
+            "earlymedia":   "boolean",
+            "t38fax":       "boolean",
+            "video":        "boolean",
+            "dtmfrelay":    "boolean",
+            "dtmfmode":     "string",
+            "t1":           "integer",
+            "t2":           "integer",
+            "t3":           "integer",
+            "regexpires":   "integer",
+            "noprogress":   "boolean",
+            "nosymnat":     "boolean",
+            "noredirectinfo":"boolean",
+            "passanumber":  "boolean",
+            "h323": {
+                "faststart":    "boolean",
+                "h245tunneling":"boolean",
+                "playringback": "boolean",
+                "isdnatype":    "string",
+                "isdnaplan":    "string",
+                "isdnbtype":    "string",
+                "isdnbplan":    "string",
+                "presentation": "boolean",
+            },
+            "sip":{
+                "nowaitack":    "boolean",
+            }
+        },
+        "maxinbounds":      "integer",
+        "maxoutbounds":     "integer",
+        "inboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "inboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+    }    
+},
+
+
+/*  Create trunk or update trunk settings
+ *  
+ *  method: "setTrunk"
+ * 
+ *  params: { map }
+ *  
+ *          "oid":          object identifier (omit for creation of the new trunk)
+ *          "name"          trunk name
+ *          "enabled"       trunk state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "deviceid":     device identifier
+ *          "protocol":     protocol: sip / sips / h323
+ *          
+ *          "type":         trunk type:
+ *                          "external" - trunk to any service provider
+ *                          "internal" - trunk provided by the server itself
+ *                          
+ *          External trunk params:
+ *          "domain":       IP address or domain name given by service provider
+ *          "register":     registration requirement:
+ *                          true - with registration
+ *                          false - without registration
+ *          External trunk registration params:
+ *          "user":         username (may be phone number)
+ *          "auth":         authentication name
+ *          "pass":         authentication password
+ *          "proxy":        proxy requirement:
+ *                          true - with proxy
+ *                          false - without proxy
+ *          External trunk proxy params:
+ *          "paddr":        IP address or domain name
+ *          "pauth":        authentication name
+ *          "ppass":        authentication password
+ *          
+ *          Internal trunk params:
+ *          "user":         username
+ *          "pass":         password
+ *          
+ *          
+ *          "parameters":   { map }
+ *                          
+ *                          "codecs":   [ array of { maps } ]
+ *                                      "codec":    audio codec name: "G.711 Alaw", "G.711 Ulaw", "G.729", "G.723", "Opus"
+ *                                      "frame":    frame duration in milliseconds
+ *                          
+ *                          "directrtp"     direct media connection mode (true/false)       
+ *                          "transcoding":  allow media transcoding (true/false)
+ *                          "buffering":    allow media buffering (true/false)
+ *                          "earlymedia":   allow early media connection (true/false)
+ *                          "t38fax":       allow t38 fax protocol (true/false)
+ *                          "video":        allow video connection (true/false)
+ *                          "dtmfrelay":    allow dtmf relay (true/false)
+ *                          "dtmfmode":     dtmf mode selection:
+ *                                          "inband"
+ *                                          "rfc2833"
+ *                                          "sip info" (sip/sips protocols)
+ *                                          "h245alpha" (h323 protocol)
+ *                                          "h245signal" (h323 protocol)
+ *                                          
+ *                          "t1":           t1 timer value
+ *                          "t2":           t2 timer value
+ *                          "t3":           t3 timer value
+ *                          "regexpires":   external trunk registration expires value
+ *                          "noprogress":   send Ringback instead of Progress message (true/false)
+ *                          "nosymnat":     disable symmetic RTP transmittion (true/false)
+ *                          "noredirectinfo": omit redirection information (true/false)
+ *                          "passanumber":  pass calling party number to external trunk instead of registered username (true/false)
+ *                          
+ *          "maxinbounds":  inbound connections limit
+ *          "maxoutbounds": outbound connections limit
+ *                          
+ *          "inboundanumbertransforms": [ array of { maps } ]
+ *                                      inbound calling party number rules
+ *                                                      
+ *          "inboundbnumbertransforms": [ array of { maps } ]
+ *                                      inbound called party number rules
+ *                                                      
+ *          "outboundanumbertransforms":[ array of { maps } ]
+ *                                      outbound calling party number rules
+ *                                                      
+ *          "outboundbnumbertransforms":[ array of { maps } ]
+ *                                      outbound called party number rules
+ *                          
+ *                          
+ *  result: { map }
+ *  
+ *          "oid":          object identifier
+ *   
+ */
+"setTrunk":{
+    
+    "params": {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "deviceid":         "string",
+        "protocol":         "string",
+        "type":             "string",
+        "domain":           "string",
+        "register":         "boolean",
+        "user":             "string",
+        "auth":             "string",
+        "pass":             "string",
+        "proxy":            "boolean",
+        "paddr":            "string",
+        "pauth":            "string",
+        "ppass":            "string",
+        "parameters": {
+            "codecs": [
+                {
+                "codec":    "string",
+                "frame":    "integer",
+                }
+            ],
+            "directrtp":    "boolean",
+            "transcoding":  "boolean",
+            "buffering":    "boolean",
+            "earlymedia":   "boolean",
+            "t38fax":       "boolean",
+            "video":        "boolean",
+            "dtmfrelay":    "boolean",
+            "dtmfmode":     "string",
+            "t1":           "integer",
+            "t2":           "integer",
+            "t3":           "integer",
+            "regexpires":   "integer",
+            "noprogress":   "boolean",
+            "nosymnat":     "boolean",
+            "noredirectinfo":"boolean",
+            "passanumber":  "boolean",
+            "h323": {
+                "faststart":    "boolean",
+                "h245tunneling":"boolean",
+                "playringback": "boolean",
+                "isdnatype":    "string",
+                "isdnaplan":    "string",
+                "isdnbtype":    "string",
+                "isdnbplan":    "string",
+                "presentation": "boolean",
+            },
+            "sip":{
+                "nowaitack":    "boolean",
+            }
+        },
+        "maxinbounds":      "integer",
+        "maxoutbounds":     "integer",
+        "inboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "inboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+    },
+
+    "result": {
+        "oid":              "string",        
+    }
+},
+
+
+/*  Delete trunk
+ *  
+ *  method: "deleteTrunk"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: "OK"
+ *  
+ */
+"deleteTrunk":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result":               "string"
+},
+
+    
+/*  Get list of trunk groups
+ *  
+ *  method: "getTrunkGroups"
+ * 
+ * 
+ *  params: none
+ *  
+ *  result: [ array of { maps } ]
+ *  
+ *          "oid":      object identifier
+ *          "name"      name
+ *          "enabled"   state:
+ *                      true - enabled
+ *                      false - disabled
+ *          "status":   description of the last state
+ *          
+ * 
+ * 
+ */
+"getTrunkGroups": {
+    
+    "params": {
+    },
+    
+    "result": [
+        {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "cause":            "string",
+        }
+    ]
+},
+
+
+/*  Get trunkgroup settings
+ *  
+ *  method: "getTrunkGroup"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: { map }
+ *          "name"          trunk name
+ *          "enabled"       trunk state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "status":       description of the last state
+ *          "deviceid":     device identifier
+ *          "protocol":     protocol: sip / sips / h323
+ *          "maxinbounds":  inbound connections limit
+ *          "maxoutbounds": outbound connections limit
+ *                          
+ *          "inboundanumbertransforms": [ array of { maps } ]
+ *                                      inbound calling party number rules
+ *                                                      
+ *          "inboundbnumbertransforms": [ array of { maps } ]
+ *                                      inbound called party number rules
+ *                                                      
+ *          "outboundanumbertransforms":[ array of { maps } ]
+ *                                      outbound calling party number rules
+ *                                                      
+ *          "outboundbnumbertransforms":[ array of { maps } ]
+ *                                      outbound called party number rules
+ *                          
+ *                             
+ */
+"getTrunkGroup":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result": {
+        "name":             "string",
+        "enabled":          "boolean",
+        "status":           "string",
+        "deviceid":         "string",
+        "protocol":         "string",
+        "maxinbounds":      "integer",
+        "maxoutbounds":     "integer",
+        "inboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "inboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+    }    
+},
+
+
+/*  Create trunkgroup or update trunkgroup settings
+ *  
+ *  method: "setTrunkGroup"
+ * 
+ *  params: { map }
+ *  
+ *          "oid":          object identifier (omit for creation of the new trunk)
+ *          "name"          name
+ *          "enabled"       state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "deviceid":     device identifier
+ *          "protocol":     protocol: sip / sips / h323
+ *          "maxinbounds":  inbound connections limit
+ *          "maxoutbounds": outbound connections limit
+ *                          
+ *          "inboundanumbertransforms": [ array of { maps } ]
+ *                                      inbound calling party number rules
+ *                                                      
+ *          "inboundbnumbertransforms": [ array of { maps } ]
+ *                                      inbound called party number rules
+ *                                                      
+ *          "outboundanumbertransforms":[ array of { maps } ]
+ *                                      outbound calling party number rules
+ *                                                      
+ *          "outboundbnumbertransforms":[ array of { maps } ]
+ *                                      outbound called party number rules
+ *                          
+ *                          
+ *  result: { map }
+ *  
+ *          "oid":          object identifier
+ *   
+ */
+"setTrunkGroup":{
+    
+    "params": {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "deviceid":         "string",
+        "protocol":         "string",
+        "maxinbounds":      "integer",
+        "maxoutbounds":     "integer",
+        "inboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "inboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundanumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "outboundbnumbertransforms": [
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+    },
+
+    "result": {
+        "oid":              "string",        
+    }
+},
+
+
+/*  Delete trunk group
+ *  
+ *  method: "deleteTrunkGroup"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: "OK"
+ *  
+ */
+"deleteTrunkGroup":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result":               "string"
+},
+
+    
+/*  Get list of routing tables
+ *  
+ *  method: "getRoutingTables"
+ * 
+ * 
+ *  params: none
+ *  
+ *  result: [ array of { maps } ]
+ *  
+ *          "oid":      object identifier
+ *          "name"      name
+ *          "enabled"   state:
+ *                      true - enabled
+ *                      false - disabled
+ *          "status":   description of the last state
+ *          
+ * 
+ * 
+ */
+"getRoutingTables": {
+    
+    "params": {
+    },
+    
+    "result": [
+        {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "cause":            "string",
+        }
+    ]
+},
+
+
+/*
+ *  Get routing table parameters 
+ * 
+ *  method:  "getRoutingTable"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: { map }
+ *          "name"          name
+ *          "enabled"       state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "status":       description of the last state
+ *          "priorities":   array of rules ordered by priority
+ *          
+ *          "anumbertransforms": [ array of { maps } ]
+ *                               calling party number rules
+ *                                                      
+ *          "bnumbertransforms": [ array of { maps } ]
+ *                               called party number rules
+ *                               
+ *          "routes":       [ array of { maps } ]
+ *                          "oid":          route identifier
+ *                          "number":       phone number or prefix
+ *                          "description":  description of route
+ *                          "target":       target object { map }
+ *                                          "oid":  object identifier
+ *                                          "name": object name
+ *                          "priority":     priority of route
+ *                          "cost":         cost (tariff)
+ *                          "huntstop":     stop hunting on this route (true/false)
+ *                          
+ */
+"getRoutingTable": {
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result": {
+        "name":             "string",
+        "enabled":          "boolean",
+        "status":           "string",
+        "priorities":       ["number"],
+        "anumbertransforms":[
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "bnumbertransforms":[
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "routes": [
+            {
+                "oid":          "string",
+                "number":       "string",
+                "description":  "string",
+                "target": {
+                    "oid":      "string",
+                    "name":     "string",
+                },
+                "priority":     "number",
+                "cost":         "float",
+                "huntstop":     "boolean",
+            }
+        ]
+    },   
+},
+
+
+/*
+ *  Create routing table or update routing table parameters 
+ * 
+ *  method:  "setRoutingTable"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier (omit to create new table)
+ *          "name"          name
+ *          "enabled"       state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "priorities":   array of rules ordered by priority
+ *          
+ *          "anumbertransforms": [ array of { maps } ]
+ *                               calling party number rules
+ *                                                      
+ *          "bnumbertransforms": [ array of { maps } ]
+ *                               called party number rules
+ *                               
+ *          "routes":       [ array of { maps } ]
+ *                          "oid":          route identifier
+ *                          "number":       phone number or prefix
+ *                          "description":  description of route
+ *                          "target":       target object { map }
+ *                                          "oid":  object identifier
+ *                                          "name": object name
+ *                          "priority":     priority of route
+ *                          "cost":         cost (tariff)
+ *                          "huntstop":     stop hunting on this route (true/false)
+ *                          
+ * 
+ *  result: { map }
+ *  
+ *          "oid":          object identifier
+ *
+ */
+"setRoutingTable": {
+    
+    "params": {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "status":           "string",
+        "priorities":       ["number"],
+        "anumbertransforms":[
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "bnumbertransforms":[
+            {
+                "number":       "string",
+                "strip":        "boolean",
+                "prefix":       "string",
+            }
+        ],
+        "routes": [
+            {
+                "oid":          "string",
+                "number":       "string",
+                "description":  "string",
+                "target": {
+                    "oid":      "string",
+                    "name":     "string",
+                },
+                "priority":     "number",
+                "cost":         "float",
+                "huntstop":     "boolean",
+            }
+        ]
+    },
+    
+    "result": {
+        "oid":              "string",
+    }
+},
+
+
+/*
+ *  Get routes
+ * 
+ *  method:  "getRoutes"
+ * 
+ *  params: { map }
+ *          "oid":          routing table identifier
+ *  
+ *  result: [ array of { maps } ]
+ *          "oid":          route identifier
+ *          "number":       phone number or prefix
+ *          "description":  description of route
+ *          "target":       target object { map }
+ *                          "oid":  object identifier
+ *                          "name": object name
+ *          "priority":     priority of route
+ *          "cost":         cost (tariff)
+ *          "huntstop":     stop hunting on this route (true/false)
+ *                          
+ */
+"getRoutes": {
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result": [
+        {
+            "oid":          "string",
+            "number":       "string",
+            "description":  "string",
+            "target": {
+                "oid":      "string",
+                "name":     "string",
+            },
+            "priority":     "number",
+            "cost":         "float",
+            "huntstop":     "boolean",
+        }
+    ]
+},
+
+
+/*
+ * Create or update route
+ * 
+ * method:  "setRoute"
+ * 
+ * params:  { map }
+ *          "oid":          object idantifier (omit for creation of the new route)
+ *          "groupid":      routing table identifier
+ *          "number":       phone number or prefix
+ *          "description":  description of route
+ *          "target":       target object { map }
+ *                          "oid":  object identifier
+ *                          "name": object name
+ *          "priority":     priority of route
+ *          "cost":         cost (tariff)
+ *          "huntstop":     stop hunting on this route (true/false)
+ * 
+ * 
+ * result:  { map }
+ *          "oid":          object idantifier
+ *          
+ */
+"setRoute": {
+        
+    "params": {
+        "oid":              "string",
+        "groupid":          "string",
+        "number":           "string",
+        "description":      "string",
+        "target": {
+            "oid":          "string",
+            "name":         "string",            
+        },
+        "priority":         "number",
+        "cost":             "float",
+        "huntstop":         "boolean",
+    },
+    
+    "result": {
+        "oid":              "string",
+    }
+},
+
+
+/*  Delete routing table
+ *  
+ *  method: "deleteRoutingTable"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: "OK"
+ *  
+ */
+"deleteRoutingTable":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result":               "string"
+},
+
+    
+/*  Get list of timers
+ *  
+ *  method: "getTimers"
+ * 
+ *  params: none
+ *  
+ *  result: [ array of { maps } ]
+ *  
+ *          "oid":      object identifier
+ *          "name"      name
+ *          "enabled"   state:
+ *                      true - enabled
+ *                      false - disabled
+ *          "status":   description of the last state
+ *          
+ * 
+ * 
+ */
+"getTimers": {
+    
+    "params": {
+    },
+    
+    "result": [
+        {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "cause":            "string",
+        }
+    ]
+},
+
+
+/*  Get timer parameters
+ *
+ *  method: "getTimer"
+ *
+ *  params: { map }
+ *          "oid":          object idantifier
+ *          
+ *  result: { map }
+ *          "name"          name
+ *          "enabled"       state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "status":       description of the last state
+ *          "hour":         hour of day
+ *          "minute":       minute
+ *          "weekdays":     days of week (1 - 7)
+ *          "yeardays":     days of year (1 - 366)
+ *          "targets":      [ array of { maps } ]
+ *                          "oid":      target object idantifier
+ *                          "name":     target object name
+ *                          "action":   timer action:
+ *                                      "Enable" - enable object
+ *                                      "Disable" - disable object
+ *                                      "Run instance" - run application one time
+ * 
+ */
+"getTimer":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result": {
+        "name":             "string",
+        "enabled":          "boolean",
+        "status":           "string",
+        "hour":             "integer",
+        "minute":           "integer",
+        "weekdays":         ["integer"],
+        "yeardays":         ["integer"],
+        "targets": [
+            {
+                "oid":      "string",
+                "name":     "string",
+                "action":   "string",
+            }
+        ]
+    },  
+},
+
+
+/*  Create timer or update timer parameters
+ *
+ *  method: "setTimer"
+ *
+ *  params: { map }
+ *          "oid":          object idantifier (omit to create new timer)
+ *          "name"          name
+ *          "enabled"       state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "hour":         hour of day
+ *          "minute":       minute
+ *          "weekdays":     days of week (1 - 7)
+ *          "yeardays":     days of year (1 - 366)
+ *          "targets":      [ array of { maps } ]
+ *                          "oid":      target object idantifier
+ *                          "name":     target object name
+ *                          "action":   timer action:
+ *                                      "Enable" - enable object
+ *                                      "Disable" - disable object
+ *                                      "Run instance" - run application one time
+ * 
+ * 
+ *  result: { map }
+ *          "oid":          object idantifier
+ *          
+ */
+"setTimer":{
+    
+    "params": {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "hour":             "integer",
+        "minute":           "integer",
+        "weekdays":         ["integer"],
+        "yeardays":         ["integer"],
+        "targets": [
+            {
+                "oid":      "string",
+                "name":     "string",
+                "action":   "string",
+            }
+        ]
+    },
+    
+    "result": {
+        "oid":              "string",
+    }
+},
+
+
+/*  Delete timer
+ *  
+ *  method: "deleteTimer"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: "OK"
+ *  
+ */
+"deleteTimer":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result":               "string"
+},
+
+    
+/*  Get list of applications
+ *  
+ *  method: "getApplications"
+ * 
+ * 
+ *  params: none
+ *  
+ *  result: [ array of { maps } ]
+ *  
+ *          "oid":      object identifier
+ *          "name"      name
+ *          "enabled"   state:
+ *                      true - enabled
+ *                      false - disabled
+ *          "status":   description of the last state
+ *          
+ * 
+ * 
+ */
+"getApplications": {
+    
+    "params": {
+    },
+    
+    "result": [
+        {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "cause":            "string",
+        }
+    ]
+},
+
+
+/*
+ *  Get application parameters
+ *  
+ *  method: "getApplication"
+ *
+ *  params: { map }
+ *          "oid":          object idantifier
+ *          
+ *  result: { map }
+ *          "name"          name
+ *          "enabled"       state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "status":       description of the last state
+ *          "maxlines":     maximum running instances 
+ *          "parameters":   [ array of { maps } ]
+ *                          "key":      parameter name
+ *                          "value":    parameter value
+ *          "dbconnection": { map }
+ *                          "driver":   JDBC driver
+ *                          "url":      driver URL string
+ *                          "owner":    database schema/owner
+ *                          "username": username
+ *                          "password": password
+ *                          
+ *          "inboundanumbertransforms": [ array of { maps } ]
+ *                                      inbound calling party number rules
+ *                                                      
+ *          "inboundbnumbertransforms": [ array of { maps } ]
+ *                                      inbound called party number rules
+ *                                                      
+ *          "outboundanumbertransforms":[ array of { maps } ]
+ *                                      outbound calling party number rules
+ *                                                      
+ *          "outboundbnumbertransforms":[ array of { maps } ]
+ *                                      outbound called party number rules
+ *                                      
+ */
+"getApplication":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result": {
+        "name":             "string",
+        "enabled":          "boolean",
+        "status":           "string",
+        "maxlines":         "integer",
+        "parameters": [
+            {
+                "key":      "string",
+                "value":    "string",
+            }
+        ],
+        "debug":            "boolean",
+        "dbconnection": {
+            "driver":       "string",
+            "url":          "string",
+            "owner":        "string",
+            "username":     "string",
+            "password":     "string",               
+        },
+        "inboundanumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+        "inboundbnumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+        "outboundanumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+        "outboundbnumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+    }    
+},
+
+
+/*
+ *  Create application or update application parameters
+ *  
+ *  method: "setApplication"
+ *
+ *  params: { map }
+ *          "oid":          object idantifier (omit to create new timer)
+ *          "name"          name
+ *          "enabled"       state:
+ *                          true - enabled
+ *                          false - disabled
+ *          "maxlines":     maximum running instances 
+ *          "parameters":   [ array of { maps } ]
+ *                          "key":      parameter name
+ *                          "value":    parameter value
+ *          "dbconnection": { map }
+ *                          "driver":   JDBC driver
+ *                          "url":      driver URL string
+ *                          "owner":    database schema/owner
+ *                          "username": username
+ *                          "password": password
+ *                          
+ *          "inboundanumbertransforms": [ array of { maps } ]
+ *                                      inbound calling party number rules
+ *                                                      
+ *          "inboundbnumbertransforms": [ array of { maps } ]
+ *                                      inbound called party number rules
+ *                                                      
+ *          "outboundanumbertransforms":[ array of { maps } ]
+ *                                      outbound calling party number rules
+ *                                                      
+ *          "outboundbnumbertransforms":[ array of { maps } ]
+ *                                      outbound called party number rules
+ * 
+ * result:  { map }
+ *          "oid":          object idantifier
+ *                                      
+ */
+"setApplication":{
+    
+    "params": {
+        "oid":              "string",
+        "name":             "string",
+        "enabled":          "boolean",
+        "maxlines":         "integer",
+        "parameters": [
+            {
+                "key":      "string",
+                "value":    "string",
+            }
+        ],
+        "debug":            "boolean",
+        "dbconnection": {
+            "driver":       "string",
+            "url":          "string",
+            "owner":        "string",
+            "username":     "string",
+            "password":     "string",               
+        },
+        "inboundanumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+        "inboundbnumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+        "outboundanumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+        "outboundbnumbertransforms": [
+            {
+                "number":   "string",
+                "strip":    "boolean",
+                "prefix":   "string",
+            }
+        ],
+    },    
+    
+    "result": {
+        "oid":              "string",
+    }
+},
+
+
+/*  Delete application
+ *  
+ *  method: "deleteApplication"
+ * 
+ *  params: { map }
+ *          "oid":          object identifier
+ *  
+ *  result: "OK"
+ *  
+ */
+"deleteApplication":{
+    
+    "params": {
+        "oid":              "string",
+    },
+    
+    "result":               "string"
+},
+
+}
