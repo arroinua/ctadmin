@@ -1,5 +1,5 @@
-const templates = require("./templates");
-const debug = require("./debug");
+const templates = require("templates");
+const debug = require("debug");
 
 const Router = class {
 
@@ -21,7 +21,7 @@ const Router = class {
 	}
 
 	on(path, view, handler) {
-		let pattern = this.pathToPattern(path);
+		let pattern = this.pathToPattern(this.cleanPath(path));
 		this.routes.push({ path, view, handler, pattern });
 		this.routes.sort(this.sortRoutes);
 		return this;
@@ -55,7 +55,8 @@ const Router = class {
 	}
 
 	getRoutes(path) {
-		return this.routes.filter(item => path.match(item.pattern.string));
+		let cleanPath = this.cleanPath(path);
+		return this.routes.filter(item => cleanPath.match(item.pattern.string));
 	}
 
 	getRouteParams(path, pattern) {		
@@ -76,11 +77,15 @@ const Router = class {
 		let keys = [];
 		let string = path.replace(/([:*])(\w+)/g, (full, dots, key) => {
 			keys.push(key);
-			return '([^\/]+)';
+			return '([^\/]*)';
 		}) + '(?:\/|$)'; // replace dynamic parts of the path (ex. ':id') and add non-capturing group at the end
 
 		return { keys, string };
 	}
+
+	cleanPath(path) {
+        return path.toString().replace(/\/$|^\//, '');
+    }
 
 	sortRoutes(a, b) {
 		return (b.path.split('/').length) - (a.path.split('/').length);

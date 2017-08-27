@@ -17,6 +17,7 @@ var srcAssets = {
 	scripts: basePath.src + 'js/',
 	styles: basePath.src + 'scss/',
 	templates: basePath.src + 'templates/',
+	partials: basePath.src + 'partials/',
 	images: basePath.src + 'images/'
 };
 
@@ -24,11 +25,15 @@ var destAssets = {
 	scripts: basePath.dest + 'js/',
 	styles: basePath.dest + 'css/',
 	templates: basePath.dest + 'templates/',
+	partials: basePath.dest + 'partials/',
 	images: basePath.dest + 'images/'
 };
 
 gulp.task('scripts', function() {
-	var bundleStream = browserify(srcAssets.scripts+'main.js', {
+	var bundleStream = browserify({
+		entries: [srcAssets.scripts+'main.js'],
+		paths: ['./node_modules', srcAssets.scripts]
+	}, {
 		// standalone: 'Wchat',
 		debug: true
 	}).bundle();
@@ -57,6 +62,9 @@ gulp.task('templates', function() {
 
 	gulp.src(srcAssets.templates+'*.html')
 	.pipe(gulp.dest(destAssets.templates));
+
+	gulp.src(srcAssets.partials+'*.html')
+	.pipe(gulp.dest(destAssets.partials));
 
 });
 

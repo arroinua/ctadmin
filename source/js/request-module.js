@@ -13,15 +13,25 @@ function send(method, url, data) {
 	
 	return new Promise((resolve, reject ) => {
 		let xhr = new XMLHttpRequest();
+		
 		xhr.onload = () => { 
-			let result = (method === 'POST' && xhr.responseText) ? JSON.parse(xhr.responseText) : xhr.responseText;
-			if(result.error) reject( result.error );
-			else resolve( result );
+			let response = null;
+			try {
+				response = JSON.parse(xhr.responseText);
+			} catch(err) {
+				response = xhr.responseText;
+			}
+			if(response.error) reject( response.error );
+			else resolve( response );
 		};
 		xhr.onerror = () => { reject( xhr.statusText ) };
+		
 		xhr.open(method, url);
-		xhr.setRequestHeader('Content-Type', 'application/json');
-		if(json) xhr.send(json);
+
+		if(json) {
+			xhr.setRequestHeader('Content-Type', 'application/json');
+			xhr.send(json);
+		}
 		else xhr.send();
 	});
 }

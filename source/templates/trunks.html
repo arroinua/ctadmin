@@ -1,0 +1,9 @@
+
+<ul>
+	<li><a href="#/trunk/">+ Create trunk</a></li>
+	<% data.forEach(function(item) { %>
+
+		<li><a href="#/trunk/<%- item.oid %>"><%- item.name %> (<%- item.oid %>)</a></li>
+
+	<% }); %>
+</ul>
