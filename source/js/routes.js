@@ -1,18 +1,16 @@
-const router = require('./router');
-const debug = require('./debug');
-const trunks = require('./trunks/');
+const router = require('router');
+const debug = require('debug');
 
 router
 .on('/dashboard', 'dashboard', function(params) {
 	debug.log('dashboard route: ', params);
-	document.getElementById('container').innerHTML = params.template({ page: 'Dashboard' });
+	document.getElementById('content').innerHTML = params.template({ page: 'Dashboard' });
+})
+.on('/trunks', 'trunks', function(params) {
+	debug.log('trunk route: ', params);
+	require('./trunks/').init(params);
 })
 .on('/trunk/:oid', 'trunk', function(params) {
 	debug.log('trunk route: ', params);
-	trunks.init(params);
-	// document.getElementById('container').innerHTML = params.template({ page: 'Trunk', oid: params.params.oid });
-})
-.on('/trunk/:type/:kind/:oid', 'trunk', function(params) {
-	debug.log('trunk route: ', params);
-	document.getElementById('container').innerHTML = params.template({ page: 'Trunk', oid: params.params.oid, kind: params.params.kind, type: params.params.type });
+	require('./trunks/single').init(params);
 });

@@ -1,3 +1,6 @@
 module.exports = {
-	templates: '/ctadmin/templates/'
-}
+	serverUrl: '/',
+	mainDir: '/ctadmin/',
+	templatesPath: '/ctadmin/templates/',
+	partialsPath: '/ctadmin/partials/'
+};

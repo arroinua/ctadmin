@@ -4,15 +4,18 @@ var trunksApi = require('api/trunks');
 module.exports = { init };
 
 function init(params) {
-	debug.log('trunks init');
+	debug.log('trunk init');
 
-	trunksApi.getTrunks()
+	const oid = params.params.oid;
+	const promise = oid ? trunksApi.getTrunk({ oid }) : trunksApi.getTrunk();
+
+	promise
 	.then(function(response) {
-		debug.log('getTrunks:', response);
+		debug.log('getTrunk:', response);
 		render(params.template, response.result);
 	})
 	.catch(function(err) {
-		debug.error('getTrunks: ', err);
+		debug.log('getTrunk: ', err);
 	});
 
 }
